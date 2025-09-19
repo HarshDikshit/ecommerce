@@ -24,7 +24,7 @@ export interface Product {
 
 export default async function Home() {
   const slides: any = await getAllSlides();
-  const products: any  = await getProducts(8);
+  const products: Product[] | any  = await getProducts(8);
   const newArrivalProducts: any  = await getProducts(8, {status: ["New Arrival"]});
   const galleryProducts: any = await getGalleryProducts(8);
   

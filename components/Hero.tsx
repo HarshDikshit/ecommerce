@@ -1,63 +1,116 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import { client } from "@/sanity/lib/client";
-import { carouselQuery } from "@/sanity/queries/query";
 import Carousel from "./skeleton/Carousel";
 
-const SLIDE_DURATION = 5000; // 5s per slide
+const SLIDE_DURATION = 5000; // ms
 
-// Variants for animating text elements
 const textVariants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.8, ease: "easeOut" },
+  },
   exit: { opacity: 0, y: -30, transition: { duration: 0.5, ease: "easeIn" } },
 };
 
-export default function Hero({slides}: {slides:any}) {
-  
+export default function Hero({ slides }: { slides: any[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [progress, setProgress] = useState(0); // ms elapsed for active slide
 
-  // Fetch slides from Sanity
- 
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const accumulatedRef = useRef<number>(0);
+  const pausedRef = useRef<boolean>(false);
+  const activeIndexRef = useRef<number>(0); // 👈 mirror of activeIndex
 
-  // Auto slide logic
+  // keep refs in sync
   useEffect(() => {
-    if (!paused && slides.length > 0) {
-      timerRef.current = setTimeout(() => {
-        setActiveIndex((prev) => (prev + 1) % slides.length);
-      }, SLIDE_DURATION);
-    }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [activeIndex, paused, slides]);
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
-  if (slides.length === 0) {
-    return (
-      <Carousel/>
-    );
-  }
+  // RAF loop
+  const step = (timestamp: number) => {
+    if (!startTimeRef.current) startTimeRef.current = timestamp;
+
+    if (!pausedRef.current) {
+      const elapsed =
+        accumulatedRef.current + (timestamp - startTimeRef.current);
+      if (elapsed >= SLIDE_DURATION) {
+        // advance immediately
+        const next = (activeIndexRef.current + 1) % slides.length;
+        activeIndexRef.current = next; // update ref immediately
+        setActiveIndex(next);
+        accumulatedRef.current = 0;
+        startTimeRef.current = timestamp;
+        setProgress(0);
+      } else {
+        setProgress(elapsed);
+      }
+    }
+    rafRef.current = requestAnimationFrame(step);
+  };
+
+  // start RAF once
+  useEffect(() => {
+    startTimeRef.current = 0;
+    accumulatedRef.current = 0;
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slides.length]);
+
+  const handleMouseEnter = () => {
+    if (!pausedRef.current) {
+      const now = performance.now();
+      if (startTimeRef.current) {
+        accumulatedRef.current += now - startTimeRef.current;
+      }
+      startTimeRef.current = 0;
+      setPaused(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (pausedRef.current) {
+      startTimeRef.current = performance.now();
+      setPaused(false);
+    }
+  };
+
+  const handleIndicatorClick = (idx: number) => {
+    activeIndexRef.current = idx; // 👈 keep in sync
+    setActiveIndex(idx);
+    accumulatedRef.current = 0;
+    startTimeRef.current = performance.now();
+    setProgress(0);
+  };
+
+  if (!slides || slides.length === 0) return <Carousel />;
 
   return (
     <div
       className="relative w-full h-[80vh] overflow-hidden"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Background Image (no fade, just switch) */}
+      {/* Background */}
       <img
         src={slides[activeIndex].imageUrl}
         alt={slides[activeIndex].title}
         className="absolute inset-0 w-full h-full object-cover"
       />
-      {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
 
-      {/* Animated Content */}
+      {/* Content */}
       <div className="absolute inset-0 flex flex-col items-start ml-6 mt-12 justify-start px-6">
         <motion.h1
           key={`title-${activeIndex}`}
@@ -69,7 +122,6 @@ export default function Hero({slides}: {slides:any}) {
         >
           {slides[activeIndex].title}
         </motion.h1>
-
         <motion.p
           key={`subtitle-${activeIndex}`}
           variants={textVariants}
@@ -101,28 +153,26 @@ export default function Hero({slides}: {slides:any}) {
         )}
       </div>
 
-      {/* Progress Indicators (bars with loader effect) */}
+      {/* Progress Indicators */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-3">
-        {slides.map((_, idx) => (
-          <div
-            key={idx}
-            onClick={() => setActiveIndex(idx)}
-            className="w-10 h-2 rounded-full bg-white/30 cursor-pointer relative overflow-hidden"
-          >
-            {idx === activeIndex && (
-              <motion.div
-                key={activeIndex}
-                className="absolute top-0 left-0 h-full bg-white"
-                initial={{ width: 0 }}
-                animate={{ width: "100%" }}
-                transition={{
-                  duration: paused ? 0 : SLIDE_DURATION / 1000,
-                  ease: "linear",
-                }}
+        {slides.map((_, idx) => {
+          const widthPct =
+            idx === activeIndex
+              ? Math.min(100, (progress / SLIDE_DURATION) * 100)
+              : 0;
+          return (
+            <div
+              key={idx}
+              onClick={() => handleIndicatorClick(idx)}
+              className="w-10 h-2 rounded-full bg-white/30 cursor-pointer relative overflow-hidden"
+            >
+              <div
+                className="absolute top-0 left-0 h-full bg-white transition-[width] duration-100"
+                style={{ width: `${widthPct}%` }}
               />
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

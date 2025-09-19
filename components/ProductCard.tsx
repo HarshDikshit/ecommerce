@@ -7,20 +7,15 @@ import { IoStarHalfSharp } from "react-icons/io5";
 import { FaShoppingBasket } from "react-icons/fa";
 import Rating from '@mui/material/Rating';
 import PriceView from "./PriceView";
+import AddToCartButton from "./AddToCartButton";
+import { Product } from "@/sanity.types";
+import Link from "next/link";
+import ProductSideMenu from "./ProductSideMenu";
 
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  variant: string;
-  price: number;
-  stock: number;
-  status: string;
-  discount: number;
-  images: string[];
-}
 
-export default function ProductCard({product} : {product: Product}) {
+
+export default function ProductCard({product} : {product: Product 
+}) {
   const [hovered, setHovered] = useState(false);
   const beforePrice = product.discount ? product.price *(1 + product.discount/100) : null;
 
@@ -30,44 +25,27 @@ export default function ProductCard({product} : {product: Product}) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+      <Link href={`/product/${product?.slug.current}`}>
       {/* Image Section */}
       <div className="relative w-full h-44 overflow-hidden">
         <div className="absolute top-0 left-0 py-1 px-2 bg-red-800 text-white text-sm font-seigeui z-20 flex items-center justify-center gap-2"><TagIcon size={15}/> Upto {product.discount}% off</div>
         <img
-          src={product.images[0]}
+          src={product?.imagesArray?.[0]}
           alt={product.name}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
             hovered ? "opacity-0" : "opacity-100"
           }`}
         />
         <img
-          src={product.images[1]}
+          src={product?.imagesArray?.[1]}
           alt={product.name}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
             hovered ? "opacity-100" : "opacity-0"
           }`}
         />
-
-        {/* Cart Icon */}
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              initial={{ y: 10, opacity: 0.1 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 10, opacity: 0.1 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
-              className="absolute bottom-4 right-4 bg-black/70 p-3 rounded-md text-white hover:bg-black/60"
-            >
-              
-      {/* Shopping Bag Icon */}
-      <ShoppingBag size={15} />
-
-      
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <ProductSideMenu product={product}/>
       </div>
-
+      </Link>
       {/* Details Section */}
       <div className="p-4">
         <h3 className="text-lg font-seigeui font-semibold text-gray-800 line-clamp-2">{product.name}</h3>
@@ -80,6 +58,7 @@ export default function ProductCard({product} : {product: Product}) {
         </div>
 
           <PriceView price={product?.price} discount={product?.discount} className="mt-2"/>
+          <AddToCartButton product={product}/>
       </div>
     </div>
   );

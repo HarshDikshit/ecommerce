@@ -5,6 +5,7 @@ import "../globals.css";
 import Navbar from "@/components/Navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { useEffect } from "react";
+import Script from "next/script";
 
 
 

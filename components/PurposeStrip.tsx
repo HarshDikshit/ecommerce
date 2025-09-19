@@ -25,7 +25,7 @@ export default function PurposeStrip() {
         {purposes.map((purpose, index) => {
           const Icon = purpose.icon;
           return (
-            <Link href={`/shop?purpose=${String(purpose.name)}`}>
+            <Link key={index} href={`/shop?purpose=${String(purpose.name)}`}>
             <motion.div
               key={purpose.name}
               initial={{ opacity: 0, y: 20 }}

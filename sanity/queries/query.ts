@@ -152,7 +152,7 @@ export const filterProductsQuery = (filters: {
   }]{
     _id,
     name,
-    "slug": slug.current,
+    slug,
     price,
     discount,
     stock,
@@ -164,7 +164,7 @@ export const filterProductsQuery = (filters: {
       title,
       "slug": slug.current
     },
-    "images": images[].asset->url
+    "imagesArray": images[].asset->url
   }`;
 
   // sorting

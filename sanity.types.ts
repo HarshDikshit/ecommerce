@@ -62,7 +62,7 @@ export type Product = {
   _updatedAt: string;
   _rev: string;
   name?: string;
-  slug?: Slug;
+  slug: Slug;
   images?: Array<{
     asset?: {
       _ref: string;
@@ -76,15 +76,20 @@ export type Product = {
     _type: "image";
     _key: string;
   }>;
-  price?: number;
+  price: number;
   description?: string;
-  discount?: number;
+  discount: number;
   category?: {
     _ref: string;
     _type: "reference";
     _weak?: boolean;
     [internalGroqTypeReferenceTo]?: "category";
   };
+  Category?: {
+    _id: string;
+    name: string;
+    title: string;
+  }
   stock?: number;
   isGallery?: boolean;
   galleryImage?: {
@@ -102,6 +107,7 @@ export type Product = {
   status?: Array<string>;
   bead?: Array<string>;
   purpose?: Array<string>;
+  imagesArray?: string[];
   isFeatured?: boolean;
   createdAt?: string;
 };

@@ -6,6 +6,8 @@ import { Menu, X, Search, Heart, ShoppingCart, User } from 'lucide-react'; // Ic
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
 import { NavItems } from './NavItems';
 import { cn } from '@/lib/utils';
+import CartIcon from './CartIcon';
+import FavoriteButton from './FavoriteButton';
 
 export default function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -57,12 +59,9 @@ export default function Navbar() {
           <button aria-label="Search">
             <Search className="w-5 h-5 hover:text-[var(--saffron)]" />
           </button>
-          <Link href="/wishlist" aria-label="Wishlist">
-            <Heart className="w-5 h-5 hover:text-[var(--saffron)]" />
-          </Link>
-          <Link href="/cart" aria-label="Cart">
-            <ShoppingCart className="w-5 h-5 hover:text-[var(--saffron)]" />
-          </Link>
+            <FavoriteButton showProduct={false}/>
+
+          <CartIcon/>
           <Link href="/login" aria-label="Login">
             <User className="w-5 h-5 hover:text-[var(--saffron)]" />
           </Link>

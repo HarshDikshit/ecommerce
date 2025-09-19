@@ -30,7 +30,7 @@ export default async function CategorySlider() {
           "
         >
           {categories?.map((cat: any) => (
-            <Link href={`/shop/?category=${cat?._id}`}>
+            <Link key={cat?._id} href={`/shop/?category=${cat?._id}`}>
             <div
               key={cat._id}
               className="flex flex-col items-center text-center w-[140px] snap-start"

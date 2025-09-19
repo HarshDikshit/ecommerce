@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import React from 'react'
 
-const PriceView = ({price, discount, className}: {price: number, discount: number, className: string}) => {
+const PriceView = ({price, discount, className}: {price: number, discount?: number, className?: string}) => {
     const beforePrice = discount ? price *(1 + discount/100) : null;
   return (
     <div className={cn(className, "flex items-center gap-2")}>

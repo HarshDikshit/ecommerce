@@ -1,20 +1,27 @@
 import "./globals.css";
-import { Metadata } from "next";
+import { Toaster } from "react-hot-toast";
 
-export const metadata: Metadata = {
-  title: 'Divine Gems E-commerce',
-  description: 'Spiritual gemstones and accessories',
-};
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
-  
   return (
     <html lang="en">
-        <body className={`font-poppins antialiased`}>
-            {children}
-        </body>
+      <head>
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+      </head>
+      <body className={`font-poppins antialiased`}>
+        {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "#000000",
+              color: "#fff",
+            },
+          }}
+        />
+      </body>
     </html>
   );
-}
+};
 
 export default RootLayout;

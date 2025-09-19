@@ -41,31 +41,13 @@ const getProducts = async (
 
     const query = quantity ?
      `*[_type == "product"${filterString}] | order(createdAt desc) [0...$quantity] {
-      _id,
-      name,
-      slug,
-      price,
-      discount,
-      stock,
-      status,
-      purpose,
-      bead,
-      category-> { _id, name },
-      description,
-      "images": images[].asset->url
+      ...,
+      "Category": category-> { _id, name, title },
+      "imagesArray": images[].asset->url
     }` 
   : `*[_type == "product"${filterString}] | order(createdAt desc){
-      _id,
-      name,
-      slug,
-      price,
-      discount,
-      stock,
-      status,
-      purpose,
-      bead,
-      category-> { _id, name },
-      description,
+      ...,
+      "Category": category-> { _id, name, title },
       "images": images[].asset->url
     }`;
 
