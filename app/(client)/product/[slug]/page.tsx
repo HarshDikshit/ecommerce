@@ -80,10 +80,6 @@ const SingleProductPage = async ({
           </div>
           <ProductCharacteristics product={product} />
           <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-b-gray-200 py-5 -mt-2">
-            <div className="flex items-center gap-2 text-sm text-black  hover:text-red-600 hoverEffect cursor-pointer">
-              <RxBorderSplit className="text-lg" />
-              <p>Compare Color</p>
-            </div>
             <div className="flex items-center gap-2 text-sm text-black hover:text-red-600 hoverEffect cursor-pointer">
               <FaRegQuestionCircle className="text-lg" />
               <p>Ask a question</p>

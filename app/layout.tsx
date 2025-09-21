@@ -1,3 +1,4 @@
+import RazorpayScript from "@/components/RazorpayScript";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 
@@ -5,11 +6,9 @@ import { Toaster } from "react-hot-toast";
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
-      <head>
-        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-      </head>
       <body className={`font-poppins antialiased`} suppressHydrationWarning={true}>
         {children}
+        <RazorpayScript/>
         <Toaster
           position="bottom-right"
           toastOptions={{

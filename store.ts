@@ -3,8 +3,12 @@ import { persist } from "zustand/middleware";
 import { Product } from "./sanity.types";
 import { resolve } from "path";
 
+interface ProductList extends Product{
+  Category?: {title: string}; 
+}
+
 export interface CartItem {
-  product: Product;
+  product: ProductList;
   quantity: number;
 }
 

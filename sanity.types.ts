@@ -27,6 +27,7 @@ export type Comment = {
     [internalGroqTypeReferenceTo]?: "product";
   };
   authorClerkId?: string;
+  authorName?: string;
   rating?: number;
   images?: Array<{
     asset?: {
@@ -134,13 +135,15 @@ export type Product = {
 };
 
 export type Address = {
-  _id: string;
+  _id?: string;
   _type: "address";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
+  _createdAt?: string;
+  _updatedAt?: string;
+  _rev?: string;
   name?: string;
+  userId?: string;
   email?: string;
+  contact?: string;
   address?: string;
   city?: string;
   state?: string;

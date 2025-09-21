@@ -6,17 +6,12 @@ import PriceView from "@/components/PriceView";
 import ProductSideMenu from "@/components/ProductSideMenu";
 import QuantityButtons from "@/components/QuantityButtons";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Address, Product } from "@/sanity.types";
 import { client } from "@/sanity/lib/client";
 import { urlFor } from "@/sanity/lib/image";
 import useStore from "@/store";
 import { useAuth, useUser } from "@clerk/nextjs";
-import Card from "@mui/material/Card";
-
 import {
   Tooltip,
   TooltipContent,
@@ -29,7 +24,8 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import Razorpay from "razorpay";
+import AddressPage from "@/components/Address";
+import { currentUser } from "@clerk/nextjs/server";
 
 const CartPage = () => {
   const {
@@ -39,20 +35,18 @@ const CartPage = () => {
     getSubtotalPrice,
     resetCart,
   } = useStore();
-  const [isClient, setIsClient] = useState(false);
   const [loading, setLoading] = useState(false);
   const groupedItems = useStore((state) => state.getGroupedItem());
-
-  const { isSignedIn } = useAuth();
   const { user } = useUser();
+  const { isSignedIn, userId } = useAuth();
   const [addresses, setAddresses] = useState<Address[] | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
 
   const fetchAddress = async () => {
     setLoading(true);
     try {
-      const query = `*[_type=="address"] | order(createdAt desc)`;
-      const data = await client.fetch(query);
+      const query = `*[_type=="address" && defined(userId) && userId==$userId] | order(createdAt desc)`;
+      const data = await client.fetch(query, { userId: userId });
       setAddresses(data);
       const defaultAddress = data.find((addr: Address) => addr.default);
       if (defaultAddress) {
@@ -80,50 +74,116 @@ const CartPage = () => {
   };
 
   const handleCheckOut = async ({ price }: { price: number }) => {
+    if (!selectedAddress) {
+      toast.error("Please select a delivery address");
+      return;
+    }
+
+    if (!user) {
+      toast.error("Please sign in to continue");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Call backend to create order
-      const { data } = await axios.post("/api/razorpay", {
-        amount: price, // Rs. 500
-      });
+      // Prepare order data
+      const orderData = {
+        amount: price,
+        currency: "INR",
+        customerName: user.fullName || user.firstName || "Customer",
+        customerEmail: user.primaryEmailAddress?.emailAddress || "",
+        address: {
+          name: selectedAddress.name,
+          address: selectedAddress.address,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          zip: selectedAddress.zip,
+          contact: selectedAddress.contact,
+        },
+        products: groupedItems.map(({ product }) => ({
+          productId: product._id,
+          quantity: getItemCount(product._id),
+        })),
+        amountDiscount: Math.round(getSubtotalPrice() - getTotalPrice()),
+      };
+
+      // Create order
+      const { data } = await axios.post("/api/razorpay", orderData);
+
+      if (!data.success) {
+        throw new Error("Failed to create order");
+      }
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: price * 100,
-        currency: "INR",
+        amount: data.amount,
+        currency: data.currency,
         name: "My E-commerce App",
-        description: "Test Transaction",
+        description: `Order ${data.orderNumber}`,
         order_id: data.orderId,
         handler: async function (response: any) {
+
           try {
+            // Validate response data before sending
+            if (
+              !response.razorpay_order_id ||
+              !response.razorpay_payment_id ||
+              !response.razorpay_signature
+            ) {
+              throw new Error("Invalid payment response data");
+            }
+
+            const verificationData = {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            };
+
             const verifyRes = await fetch("/api/razorpay/verify", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(verificationData),
             });
 
-            const data = await verifyRes.json();
+            if (!verifyRes.ok) {
+              throw new Error(
+                `Verification request failed with status: ${verifyRes.status}`
+              );
+            }
 
-            if (data.success) {
-              alert("✅ Payment Verified & Successful!");
-              // TODO: update order status in your DB
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success) {
+              // Clear cart on successful payment
+              resetCart();
+              toast.success(
+                `Payment successful! Order ${verifyData.orderNumber || data.orderNumber} placed.`
+              );
+
+              // Optional: Redirect to orders page
+              window.location.href = '/order';
             } else {
-              alert("❌ Payment Verification Failed");
+              toast.error(verifyData.message || "Payment verification failed");
             }
           } catch (err) {
-            console.error(err);
-            alert("Something went wrong during verification.");
+            console.error("Verification error:", err);
+            toast.error(
+              "Payment verification failed. Please contact support if amount was deducted."
+            );
           }
         },
-
+        modal: {
+          ondismiss: function () {
+            console.log("Payment modal dismissed");
+            setLoading(false);
+          },
+        },
         prefill: {
-          name: "Ecommerce",
-          email: "test@example.com",
-          contact: "9999999999",
+          name: orderData.customerName,
+          email: orderData.customerEmail,
+          contact: selectedAddress.contact || "9999999999",
         },
         theme: {
           color: "#3399cc",
@@ -131,10 +191,16 @@ const CartPage = () => {
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response: any) {
+        console.error("Payment failed:", response.error);
+        toast.error(`Payment failed: ${response.error.description}`);
+        setLoading(false);
+      });
+
       rzp.open();
-    } catch (err) {
-      console.error(err);
-    } finally {
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      toast.error(err.message || "Failed to initiate payment");
       setLoading(false);
     }
   };
@@ -152,7 +218,6 @@ const CartPage = () => {
                 <div className="border bg-white rounded-md ">
                   {groupedItems?.map(({ product }) => {
                     const itemCount = getItemCount(product?._id);
-                    console.log(product?.imagesArray?.[0]);
 
                     return (
                       <div
@@ -289,49 +354,12 @@ const CartPage = () => {
                       </Button>
                     </div>
                   </div>
-                  {addresses && (
-                    <div className="bg-white rounded-md mt-5">
-                      <Card className="py-3">
-                        <CardHeader>
-                          <CardTitle>Delievery Address</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <RadioGroup
-                            defaultValue={addresses
-                              ?.find((addr) => addr?.default)
-                              ?._id.toString()}
-                          >
-                            {addresses?.map((address: any) => (
-                              <div
-                                key={address?._id}
-                                className={`flex items-center space-x-2 mb-4 cursor-pointer ${selectedAddress?._id === address?._id && "text-black/90"}`}
-                                onClick={() => setSelectedAddress(address)}
-                              >
-                                <RadioGroupItem
-                                  value={address?._id.toString()}
-                                />
-                                <Label
-                                  htmlFor={`address-${address?._id}`}
-                                  className="grid gap-1.5 flex-1 "
-                                >
-                                  <span className="font-semibold ">
-                                    {address?.name}
-                                  </span>
-                                  <span className="text-sm text-black/60">
-                                    {address?.address}, {address?.city},{" "}
-                                    {address?.state}, {address?.zip}
-                                  </span>
-                                </Label>
-                              </div>
-                            ))}
-                          </RadioGroup>
-                          <Button variant={"outline"} className="w-full mt-4 ">
-                            Add New Address
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
+                  <AddressPage
+                    addresses={addresses}
+                    selectedAddress={selectedAddress}
+                    setAddresses={setAddresses}
+                    setSelectedAddress={setSelectedAddress}
+                  />
                 </div>
               </div>
               <div className="md:hidden fixed bottom-0 left-0 w-full  p-2 ">
@@ -363,9 +391,10 @@ const CartPage = () => {
                       size={"lg"}
                       disabled={loading}
                       onClick={() =>
-                          handleCheckOut({
-                            price: useStore?.getState().getTotalPrice(),
-                          })}
+                        handleCheckOut({
+                          price: useStore?.getState().getTotalPrice(),
+                        })
+                      }
                     >
                       {loading ? "Please Wait..." : "Proceed to Checkout"}
                     </Button>

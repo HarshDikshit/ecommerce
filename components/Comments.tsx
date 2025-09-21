@@ -202,13 +202,13 @@ export default function CommentSection({ productId }: { productId: string }) {
                         alt="preview"
                         className="w-full h-full object-cover rounded"
                       />
-                      <button
+                      <Button
                         type="button"
                         className="absolute top-0 right-0 bg-black bg-opacity-50 text-white rounded-full p-1"
                         onClick={() => removePreview(i)}
                       >
                         <X size={12} />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -259,7 +259,7 @@ export default function CommentSection({ productId }: { productId: string }) {
                   {/* Images */}
                   {(c.images?.length as number) > 0 && (
                     <div className="mt-2 flex gap-2 flex-wrap">
-                      {c.images.map((img: any, i: number) => (
+                      {c?.images?.map((img: any, i: number) => (
                         <img
                           key={i}
                           src={img}
