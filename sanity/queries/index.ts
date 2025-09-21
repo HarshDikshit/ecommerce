@@ -5,7 +5,7 @@ interface ProductFilter {
   status?: string[];
   purpose?: string[];
   bead?: string[];
-  categoryId?: string;
+  categoryId?: string[];
 }
 
 const getProducts = async (
@@ -30,8 +30,8 @@ const getProducts = async (
         conditions.push(`count(bead[@ in $bead]) > 0`);
       }
 
-      if (filters.categoryId) {
-        conditions.push(`category._ref == $categoryId`);
+      if (filters.categoryId?.length) {
+        conditions.push(`category._ref in $categoryId`);
       }
 
       if (conditions.length) {
@@ -42,12 +42,10 @@ const getProducts = async (
     const query = quantity ?
      `*[_type == "product"${filterString}] | order(createdAt desc) [0...$quantity] {
       ...,
-      "Category": category-> { _id, name, title },
       "imagesArray": images[].asset->url
     }` 
   : `*[_type == "product"${filterString}] | order(createdAt desc){
       ...,
-      "Category": category-> { _id, name, title },
       "images": images[].asset->url
     }`;
 

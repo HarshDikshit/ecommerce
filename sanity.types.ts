@@ -13,6 +13,36 @@
  */
 
 // Source: schema.json
+export type Comment = {
+  _id: string;
+  _type: "comment";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  text?: string;
+  product?: {
+    _ref: string;
+    _type: "reference";
+    _weak?: boolean;
+    [internalGroqTypeReferenceTo]?: "product";
+  };
+  authorClerkId?: string;
+  rating?: number;
+  images?: Array<{
+    asset?: {
+      _ref: string;
+      _type: "reference";
+      _weak?: boolean;
+      [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+    };
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+    _key: string;
+  }>;
+};
+
 export type Order = {
   _id: string;
   _type: "order";
@@ -20,17 +50,12 @@ export type Order = {
   _updatedAt: string;
   _rev: string;
   orderNumber?: string;
-  invoice?: {
-    id?: string;
-    hosted_invoice_url?: string;
-    number?: string;
-  };
-  stripeCheckoutSessionId?: string;
-  stripeCustomerId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
   clerkUserId?: string;
   customerName?: string;
   customerEmail?: string;
-  stripePaymentIntentId?: string;
   products?: Array<{
     product?: {
       _ref: string;
@@ -51,8 +76,8 @@ export type Order = {
     address?: string;
     name?: string;
   };
-  status?: "pending" | "processing" | "paid" | "shipped" | "out_for_delievery" | "delivered" | "cancelled";
-  oderDate?: string;
+  status?: "pending" | "processing" | "paid" | "shipped" | "out_for_delivery" | "delivered" | "cancelled";
+  orderDate?: string;
 };
 
 export type Product = {
@@ -62,7 +87,7 @@ export type Product = {
   _updatedAt: string;
   _rev: string;
   name?: string;
-  slug: Slug;
+  slug?: Slug;
   images?: Array<{
     asset?: {
       _ref: string;
@@ -76,20 +101,16 @@ export type Product = {
     _type: "image";
     _key: string;
   }>;
-  price: number;
+  price?: number;
   description?: string;
-  discount: number;
-  category?: {
+  discount?: number;
+  categories?: Array<{
     _ref: string;
     _type: "reference";
     _weak?: boolean;
+    _key: string;
     [internalGroqTypeReferenceTo]?: "category";
-  };
-  Category?: {
-    _id: string;
-    name: string;
-    title: string;
-  }
+  }>;
   stock?: number;
   isGallery?: boolean;
   galleryImage?: {
@@ -107,8 +128,8 @@ export type Product = {
   status?: Array<string>;
   bead?: Array<string>;
   purpose?: Array<string>;
-  imagesArray?: string[];
   isFeatured?: boolean;
+  averageRating?: number;
   createdAt?: string;
 };
 
@@ -302,7 +323,7 @@ export type SanityAssetSourceData = {
   url?: string;
 };
 
-export type AllSanitySchemaTypes = Order | Product | Address | Category | Carousel | SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityImageHotspot | SanityImageCrop | SanityFileAsset | SanityImageAsset | SanityImageMetadata | Geopoint | Slug | SanityAssetSourceData;
+export type AllSanitySchemaTypes = Comment | Order | Product | Address | Category | Carousel | SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityImageHotspot | SanityImageCrop | SanityFileAsset | SanityImageAsset | SanityImageMetadata | Geopoint | Slug | SanityAssetSourceData;
 export declare const internalGroqTypeReferenceTo: unique symbol;
 // Source: ./sanity/queries/query.ts
 // Variable: categoryQuery
@@ -338,6 +359,14 @@ export type ProductQueryResult = Array<{
   description: string | null;
   images: Array<string | null> | null;
 }>;
+// Variable: GALLERY_COLLAGE
+// Query: *[_type == "product" && isGallery == true] | order(createdAt desc)[0...$quantity] {    _id,    name,    "slug": slug.current,    "galleryImage": galleryImage.asset->url  }
+export type GALLERY_COLLAGEResult = Array<{
+  _id: string;
+  name: string | null;
+  slug: string | null;
+  galleryImage: string | null;
+}>;
 // Variable: PRODUCT_BY_SLUG_QUERY
 // Query: *[_type == 'product' && slug.current == $slug] | order(name asc)[0]
 export type PRODUCT_BY_SLUG_QUERYResult = {
@@ -364,12 +393,13 @@ export type PRODUCT_BY_SLUG_QUERYResult = {
   price?: number;
   description?: string;
   discount?: number;
-  category?: {
+  categories?: Array<{
     _ref: string;
     _type: "reference";
     _weak?: boolean;
+    _key: string;
     [internalGroqTypeReferenceTo]?: "category";
-  };
+  }>;
   stock?: number;
   isGallery?: boolean;
   galleryImage?: {
@@ -388,6 +418,7 @@ export type PRODUCT_BY_SLUG_QUERYResult = {
   bead?: Array<string>;
   purpose?: Array<string>;
   isFeatured?: boolean;
+  averageRating?: number;
   createdAt?: string;
 } | null;
 
@@ -398,6 +429,7 @@ declare module "@sanity/client" {
     "*[_type == \"category\" && !defined(parent)]{\n  _id,\n  title,\n  slug,\n  \"parent\": parent->title,\n  \"imageUrl\": image.asset->url\n}": CategoryQueryResult;
     "*[_type == \"carousel\"] | order(_createdAt asc)  {\n  _id,\n  title,\n  subtitle,\n  buttonText,\n  buttonVariant,\n  buttonLink,\n  \"imageUrl\": image.asset->url\n}": CarouselQueryResult;
     "*[_type == \"product\"] | order(createdAt desc) [0...$quantity] {\n  _id,\n  name,\n  slug,\n  price,\n  discount,\n  stock,\n  status,\n  description,\n  \"images\": images[].asset->url\n}": ProductQueryResult;
+    "\n  *[_type == \"product\" && isGallery == true] | order(createdAt desc)[0...$quantity] {\n    _id,\n    name,\n    \"slug\": slug.current,\n    \"galleryImage\": galleryImage.asset->url\n  }\n": GALLERY_COLLAGEResult;
     "*[_type == 'product' && slug.current == $slug] | order(name asc)[0]": PRODUCT_BY_SLUG_QUERYResult;
   }
 }

@@ -1,5 +1,4 @@
 "use client";
-
 import Container from "@/components/Container";
 import EmptyCart from "@/components/EmptyCart";
 import NoAccess from "@/components/NoAccess";
@@ -122,7 +121,7 @@ const CartPage = () => {
         },
 
         prefill: {
-          name: "Harsh Dixit",
+          name: "Ecommerce",
           email: "test@example.com",
           contact: "9999999999",
         },
@@ -363,6 +362,10 @@ const CartPage = () => {
                       className="w-full rounded-full font-semibold tracking-wide"
                       size={"lg"}
                       disabled={loading}
+                      onClick={() =>
+                          handleCheckOut({
+                            price: useStore?.getState().getTotalPrice(),
+                          })}
                     >
                       {loading ? "Please Wait..." : "Proceed to Checkout"}
                     </Button>

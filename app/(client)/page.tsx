@@ -43,7 +43,6 @@ export default async function Home() {
         <Products products={products}/>
       </Container>
 
-      {/* BestSeller Products */}
       <Container  className='bg-slate-200 relative'>
         <GalleryCollage products={galleryProducts}/>
       </Container>

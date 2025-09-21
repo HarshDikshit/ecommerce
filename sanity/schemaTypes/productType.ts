@@ -129,6 +129,12 @@ export const productType = defineType({
       initialValue: false,
     }),
     defineField({
+      name: "averageRating",
+      title: "Average Rating",
+      type: "number",
+      description: "Auto-calculated average rating based on comments",
+    }),
+    defineField({
       name: "createdAt",
       title: "Published at",
       type: "datetime",

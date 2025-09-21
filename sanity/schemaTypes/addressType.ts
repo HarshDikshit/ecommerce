@@ -1,4 +1,3 @@
-import { isWebpackDefaultLayer } from "next/dist/build/utils";
 import { defineField, defineType } from "sanity";
 
 export const addressType = defineType({
