@@ -5,6 +5,7 @@ import { resolve } from "path";
 
 interface ProductList extends Product{
   Category?: {title: string}; 
+   price?: number;
 }
 
 export interface CartItem {
@@ -14,7 +15,7 @@ export interface CartItem {
 
 interface StoreState {
   items: CartItem[];
-  addItem: (product: Product) => void;
+  addItem: (product: ProductList) => void;
   removeItem: (productId: string) => void;
   deleteCartProduct: (productId: string) => void;
   resetCart: () => void;
@@ -22,8 +23,8 @@ interface StoreState {
   getSubtotalPrice: () => number;
   getItemCount: (productId: string) => number;
   getGroupedItem: () => CartItem[];
-  favoriteProduct: Product[];
-  addToFavorite: (product: Product) => Promise<void>;
+  favoriteProduct: ProductList[];
+  addToFavorite: (product: ProductList) => Promise<void>;
   removeFromFavorite: (productId: string) => void;
   resetFavorite: () => void;
 }

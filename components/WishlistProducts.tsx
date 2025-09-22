@@ -12,6 +12,11 @@ import { urlFor } from '@/sanity/lib/image';
 import PriceView from './PriceView';
 import AddToCartButton from './AddToCartButton';
 
+interface ProductList extends Product{
+  Category?: {title: string}; 
+  price?: number; 
+}
+
 const WishlistProducts = () => {
     const {favoriteProduct, removeFromFavorite, resetFavorite} = useStore();
     const [visibleProducts, setVisibleProducts] = useState(7);
@@ -44,7 +49,7 @@ const WishlistProducts = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {favoriteProduct?.slice(0, visibleProducts)?.map((product:Product)=> (
+                        {favoriteProduct?.slice(0, visibleProducts)?.map((product:ProductList)=> (
                             <tr key={product?._id} className='border-b'>
                                 <td className='px-2 py-4 flex items-center gap-2'>
                                     <X 
@@ -78,7 +83,7 @@ const WishlistProducts = () => {
                                     {(product?.stock as number)> 0 ? "In Stock" : "Out of Stock"} 
                                 </td>
                                 <td className='p-2'>
-                                    <PriceView price={product?.price}/>
+                                    <PriceView price={product?.price as number}/>
                                 </td>
                                 <td className='p-2'>
                                     <AddToCartButton product={product} className=''/>

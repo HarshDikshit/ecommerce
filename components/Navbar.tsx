@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Search, Heart, ShoppingCart, User } from 'lucide-react'; // Icons from lucide-react
+import { Menu, X, Search, User } from 'lucide-react'; // Icons from lucide-react
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
 import { NavItems } from './NavItems';
 import { cn } from '@/lib/utils';

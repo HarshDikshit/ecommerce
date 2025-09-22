@@ -45,7 +45,7 @@ const CartPage = () => {
   const fetchAddress = async () => {
     setLoading(true);
     try {
-      const query = `*[_type=="address" && defined(userId) && userId==$userId] | order(createdAt desc)`;
+      const query = `*[_type=="address" && userId==$userId] | order(createdAt desc)`;
       const data = await client.fetch(query, { userId: userId });
       setAddresses(data);
       const defaultAddress = data.find((addr: Address) => addr.default);
@@ -73,6 +73,7 @@ const CartPage = () => {
     }
   };
 
+ // Enhanced handleCheckOut with automatic cleanup timer
   const handleCheckOut = async ({ price }: { price: number }) => {
     if (!selectedAddress) {
       toast.error("Please select a delivery address");
@@ -85,6 +86,9 @@ const CartPage = () => {
     }
 
     setLoading(true);
+    let sanityOrderId: string | null = null;
+    let cleanupTimer: NodeJS.Timeout | null = null;
+
     try {
       // Prepare order data
       const orderData = {
@@ -114,6 +118,29 @@ const CartPage = () => {
         throw new Error("Failed to create order");
       }
 
+      sanityOrderId = data.sanityOrderId;
+
+      // Set up automatic cleanup after 15 minutes
+      cleanupTimer = setTimeout(
+        async () => {
+          console.log("Auto-cleaning up abandoned order after 15 minutes");
+          if (sanityOrderId) {
+            try {
+              await fetch(`/api/orders/${sanityOrderId}/cleanup`, {
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              });
+              console.log("Abandoned order cleaned up automatically");
+            } catch (error) {
+              console.error("Auto-cleanup failed:", error);
+            }
+          }
+        },
+        15 * 60 * 1000
+      ); // 15 minutes
+
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: data.amount,
@@ -122,17 +149,13 @@ const CartPage = () => {
         description: `Order ${data.orderNumber}`,
         order_id: data.orderId,
         handler: async function (response: any) {
+          // Clear the cleanup timer since payment was successful
+          if (cleanupTimer) {
+            clearTimeout(cleanupTimer);
+            cleanupTimer = null;
+          }
 
           try {
-            // Validate response data before sending
-            if (
-              !response.razorpay_order_id ||
-              !response.razorpay_payment_id ||
-              !response.razorpay_signature
-            ) {
-              throw new Error("Invalid payment response data");
-            }
-
             const verificationData = {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -156,14 +179,11 @@ const CartPage = () => {
             const verifyData = await verifyRes.json();
 
             if (verifyData.success) {
-              // Clear cart on successful payment
               resetCart();
               toast.success(
                 `Payment successful! Order ${verifyData.orderNumber || data.orderNumber} placed.`
               );
-
-              // Optional: Redirect to orders page
-              window.location.href = '/order';
+              window.location.href = "/order";
             } else {
               toast.error(verifyData.message || "Payment verification failed");
             }
@@ -175,8 +195,30 @@ const CartPage = () => {
           }
         },
         modal: {
-          ondismiss: function () {
+          ondismiss: async function () {
             console.log("Payment modal dismissed");
+
+            // Clear the automatic cleanup timer
+            if (cleanupTimer) {
+              clearTimeout(cleanupTimer);
+              cleanupTimer = null;
+            }
+
+            // Immediate cleanup on modal dismiss
+            if (sanityOrderId) {
+              try {
+                await fetch(`/api/orders/${sanityOrderId}/cleanup`, {
+                  method: "DELETE",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                });
+                console.log("Pending order cleaned up on modal dismiss");
+              } catch (cleanupError) {
+                console.error("Failed to cleanup pending order:", cleanupError);
+              }
+            }
+
             setLoading(false);
           },
         },
@@ -191,8 +233,30 @@ const CartPage = () => {
       };
 
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (response: any) {
+
+      rzp.on("payment.failed", async function (response: any) {
         console.error("Payment failed:", response.error);
+
+        // Clear the cleanup timer
+        if (cleanupTimer) {
+          clearTimeout(cleanupTimer);
+          cleanupTimer = null;
+        }
+
+        // Clean up on payment failure
+        if (sanityOrderId) {
+          try {
+            await fetch(`/api/orders/${sanityOrderId}/cleanup`, {
+              method: "DELETE",
+            });
+          } catch (cleanupError) {
+            console.error(
+              "Failed to cleanup after payment failure:",
+              cleanupError
+            );
+          }
+        }
+
         toast.error(`Payment failed: ${response.error.description}`);
         setLoading(false);
       });
@@ -200,6 +264,25 @@ const CartPage = () => {
       rzp.open();
     } catch (err: any) {
       console.error("Checkout error:", err);
+
+      // Clear timer and cleanup on checkout error
+      if (cleanupTimer) {
+        clearTimeout(cleanupTimer);
+      }
+
+      if (sanityOrderId) {
+        try {
+          await fetch(`/api/orders/${sanityOrderId}/cleanup`, {
+            method: "DELETE",
+          });
+        } catch (cleanupError) {
+          console.error(
+            "Failed to cleanup after checkout error:",
+            cleanupError
+          );
+        }
+      }
+
       toast.error(err.message || "Failed to initiate payment");
       setLoading(false);
     }

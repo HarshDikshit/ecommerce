@@ -233,38 +233,37 @@ const AddressPage = ({
   };
 
   const fetchAddress = async () => {
-    setLoading(true);
-    try {
-      const query = `*[_type=="address"] | order(createdAt desc)`;
-      const data = await client.fetch(query);
-      setAddresses(data);
-      const defaultAddress = data.find((addr: Address) => addr.default);
-      if (defaultAddress) {
-        setSelectedAddress(defaultAddress);
-      } else if (data.length > 0) {
-        setSelectedAddress(data[0]);
+      setLoading(true);
+      try {
+        const query = `*[_type=="address" && userId==$userId] | order(createdAt desc)`;
+        const data = await client.fetch(query, { userId: user?.id });
+        setAddresses(data);
+        const defaultAddress = data.find((addr: Address) => addr.default);
+        if (defaultAddress) {
+          setSelectedAddress(defaultAddress);
+        } else if (data.lenght > 0) {
+          setSelectedAddress(data[0]);
+        }
+      } catch (error) {
+        console.log("Addresses fetching error:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.log("Addresses fetching error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAddress();
-  }, []);
+    };
+  
+    useEffect(() => {
+      fetchAddress();
+    }, []);
 
   return (
     <div>
-      {addresses ?
         <div className="bg-white rounded-md mt-5">
           <Card className="py-3">
             <CardHeader>
               <CardTitle>Delivery Address</CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup
+              {(addresses?.length as number) > 0 ? <RadioGroup
                 defaultValue={addresses
                   ?.find((addr) => addr?.default)
                   ?._id?.toString()}
@@ -303,7 +302,7 @@ const AddressPage = ({
                     </Button>
                   </div>
                 ))}
-              </RadioGroup>
+              </RadioGroup>: <div>No Address Found</div>}
               <Button
                 onClick={() => setOpen(true)}
                 variant={"outline"}
@@ -418,7 +417,7 @@ const AddressPage = ({
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Address</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete "{addressToDelete?.name}"?
+                  Are you sure you want to delete &quot; {addressToDelete?.name}&quot;?
                   This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -434,7 +433,6 @@ const AddressPage = ({
             </AlertDialogContent>
           </AlertDialog>
         </div>
-      : <div>No Address found for your Account</div>}
     </div>
   );
 };

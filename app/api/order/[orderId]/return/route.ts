@@ -5,7 +5,7 @@ import { server } from "@/sanity/lib/server";
 
 export async function POST(
   request: Request,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -14,6 +14,7 @@ export async function POST(
     }
 
     const body = await request.json();
+    const { orderId } = await params;
     const { reason, description, images, refundMethod = "original" } = body;
 
     if (!reason) {
@@ -33,7 +34,7 @@ export async function POST(
         totalPrice,
         products[]
       }`,
-      { orderId: params.orderId, userId }
+      { orderId: orderId, userId }
     );
 
     if (!order) {
@@ -96,10 +97,11 @@ export async function POST(
 // Process refund (Admin endpoint)
 export async function PATCH(
   request: Request,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const body = await request.json();
+    const { orderId } = await params;
     const { action, refundAmount } = body; // action: 'approve' | 'reject'
 
     if (!['approve', 'reject'].includes(action)) {
@@ -117,7 +119,7 @@ export async function PATCH(
         razorpayPaymentId,
         returnRequest
       }`,
-      { orderId: params.orderId }
+      { orderId: orderId }
     );
 
     if (!order || order.status !== 'refund_requested') {

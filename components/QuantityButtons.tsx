@@ -9,10 +9,9 @@ import toast from 'react-hot-toast';
 
 interface Props {
     product: Product;
-    className?: string;
 }
 
-const QuantityButtons = ({product, className} : Props) => {
+const QuantityButtons = ({product} : Props) => {
     const {addItem, removeItem, getItemCount} = useStore();
     const itemCount = getItemCount(product?._id);
     const isOutOfStock = product?.stock === 0;

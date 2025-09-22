@@ -3,39 +3,37 @@
 import { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from './ProductCard';
+import { Product } from '@/sanity.types';
 
-interface Product {
+interface ProductList extends Product {
   _id: string;
   name: string;
   description: string;
   variant: string;
   price: number;
   discount: number;
-  images: string[];
+  imagesArray: string[];
 }
 
 interface ProductSliderProps {
-  products: Product[];
+  products: ProductList[];
   variant: string;
   description: string;
   descriptionPosition: 'left' | 'right';
 }
 
 export default function ProductSlider({ products, variant, description, descriptionPosition }: ProductSliderProps) {
-  const [scrollPosition, setScrollPosition] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const scrollLeft = () => {
     if (sliderRef.current) {
       sliderRef.current.scrollBy({ left: -300, behavior: 'smooth' });
-      setScrollPosition(sliderRef.current.scrollLeft);
     }
   };
 
   const scrollRight = () => {
     if (sliderRef.current) {
       sliderRef.current.scrollBy({ left: 300, behavior: 'smooth' });
-      setScrollPosition(sliderRef.current.scrollLeft);
     }
   };
 
@@ -58,7 +56,7 @@ export default function ProductSlider({ products, variant, description, descript
               <ChevronLeft className="w-6 h-6" />
             </button>
             <div ref={sliderRef} className="product-slider">
-              {products.map((product) => (
+              {products.map(({product}: any) => (
                 <ProductCard key={product._id} product={product} />
               ))}
             </div>

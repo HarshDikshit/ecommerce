@@ -123,7 +123,8 @@ export async function GET(
         `City: ${order.address.city}, ${order.address.state} ${order.address.zip}`,
         50,
         235
-      );
+      )
+      .text(`Contact: ${order.address.contact}`, 50, 250);
 
     // Products Table Header
     const tableTop = 280;

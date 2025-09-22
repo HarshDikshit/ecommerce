@@ -53,6 +53,7 @@ interface Order {
     city: string;
     state: string;
     zip: string;
+    contact: string;
   };
   products: OrderProduct[];
   razorpayPaymentId?: string;
@@ -423,7 +424,7 @@ const OrdersPage = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">No Orders Yet</h2>
             <p className="text-gray-600 mb-8 leading-relaxed">
-              You haven't placed any orders yet. Start shopping to see your orders here!
+              You haven&apos;t placed any orders yet. Start shopping to see your orders here!
             </p>
             <Button 
               className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 rounded-full"
@@ -515,6 +516,7 @@ const OrdersPage = () => {
                       <p className="text-gray-700">
                         {order.address.city}, {order.address.state} {order.address.zip}
                       </p>
+                      <p  className="text-gray-700">Contact: {order.address.contact}</p>
                     </div>
 
                     {order.awbCode && (

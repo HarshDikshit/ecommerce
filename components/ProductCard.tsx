@@ -8,12 +8,13 @@ import Link from "next/link";
 import ProductSideMenu from "./ProductSideMenu";
 import { TagIcon } from "lucide-react";
 
+interface ProductList extends Product {
+  imagesArray: string[];
+}
 
-
-export default function ProductCard({product} : {product: Product 
+export default function ProductCard({product} : {product: ProductList 
 }) {
   const [hovered, setHovered] = useState(false);
-  const beforePrice = product.discount ? (product.price as number) *(1 + product.discount/100) : null;
 
   return (
     <div

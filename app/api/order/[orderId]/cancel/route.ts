@@ -5,13 +5,16 @@ import { server } from "@/sanity/lib/server";
 
 export async function POST(
   request: Request,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Await the params object
+    const { orderId } = await params;
 
     const body = await request.json();
     const { reason } = body;
@@ -36,7 +39,7 @@ export async function POST(
           quantity
         }
       }`,
-      { orderId: params.orderId, userId }
+      { orderId, userId }
     );
 
     if (!order) {
@@ -49,7 +52,7 @@ export async function POST(
     // Check if order can be cancelled
     const now = new Date();
     const orderDate = new Date(order.orderDate);
-    const cancellationDeadline = order.cancellationDeadline 
+    const cancellationDeadline = order.cancellationDeadline
       ? new Date(order.cancellationDeadline)
       : new Date(orderDate.getTime() + 24 * 60 * 60 * 1000); // 24 hours default
 
@@ -94,7 +97,6 @@ export async function POST(
       message: "Order cancelled successfully",
       orderNumber: order.orderNumber,
     });
-
   } catch (error) {
     console.error("Order cancellation error:", error);
     return NextResponse.json(
