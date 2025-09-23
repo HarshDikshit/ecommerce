@@ -287,12 +287,12 @@ const NavbarItems = () => {
           <div className=" flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <a
+              <Link
                 href="/"
                 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
               >
                 Divine Gems
-              </a>
+              </Link>
             </div>
 
             {/* Desktop Navigation - Center */}
