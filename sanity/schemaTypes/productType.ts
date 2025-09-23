@@ -1,6 +1,5 @@
 import { defineField, defineType } from "sanity";
 import { TrolleyIcon } from "@sanity/icons";
-import { subscribe } from "diagnostics_channel";
 
 export const productType = defineType({
   name: "product",

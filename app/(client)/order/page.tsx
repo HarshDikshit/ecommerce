@@ -485,8 +485,9 @@ const OrdersPage = () => {
                       Products ({order.products.length})
                     </h3>
                     <div className="space-y-3">
-                      {order.products.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      {order.products.map((item, index) =>
+                      { 
+                       return( <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                           <div className="flex-1">
                             <Link 
                               href={`/product/${item.product.slug?.current}`}
@@ -500,8 +501,8 @@ const OrdersPage = () => {
                           <p className="font-semibold text-gray-900">
                             {formatPrice(item.product.price * item.quantity)}
                           </p>
-                        </div>
-                      ))}
+                        </div>)
+                      })}
                     </div>
                   </div>
 

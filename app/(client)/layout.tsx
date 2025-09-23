@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { useEffect } from "react";
 import Script from "next/script";
+import NavbarItems from "@/components/NavItems";
 
 
 
@@ -22,7 +23,8 @@ export default function RootLayout({
   return (
     <ClerkProvider>
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      {/* <Navbar /> */}
+      <NavbarItems/>
       <main className="flex-1">{children}</main>
       <Footer/>
     </div>

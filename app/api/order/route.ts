@@ -32,7 +32,8 @@ export async function GET() {
             name,
             images,
             price,
-            discount
+            discount,
+            slug
           }
         }
       }`,
