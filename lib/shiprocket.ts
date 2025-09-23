@@ -183,11 +183,11 @@ class ShiprocketAPI {
 export const shiprocketAPI = new ShiprocketAPI();
 
 // Helper function to convert order to Shiprocket format
-export function convertOrderToShiprocketFormat(order: any, pickupLocation: string): ShiprocketOrderData {
+export function convertOrderToShiprocketFormat(order: any, pickupLocation?: string): ShiprocketOrderData {
   return {
     order_id: order.orderNumber,
     order_date: order.orderDate,
-    pickup_location: pickupLocation,
+    pickup_location: pickupLocation || "Custom",
     channel_id: "custom", // Your channel ID from Shiprocket
     comment: "Order from E-commerce site",
     billing_customer_name: order.customerName.split(' ')[0],

@@ -1,4 +1,4 @@
-import { enhancedShiprocketAPI } from "@/lib/shiprocket";
+import { convertOrderToShiprocketFormat, shiprocketAPI } from "@/lib/shiprocket";
 import { server } from "@/sanity/lib/server";
 import { NextResponse } from "next/server";
 
@@ -35,13 +35,13 @@ export async function POST(request: Request) {
     }
 
     // Convert to Shiprocket format
-    const shiprocketOrderData = enhancedShiprocketAPI.convertToTestOrder(
+    const shiprocketOrderData = convertOrderToShiprocketFormat(
       order, 
        // Your pickup location name in Shiprocket
     );
 
     // Create order in Shiprocket
-    const shiprocketResponse = await enhancedShiprocketAPI.createOrder(shiprocketOrderData);
+    const shiprocketResponse = await shiprocketAPI.createOrder(shiprocketOrderData);
 
     // Update order in Sanity with Shiprocket details
     await server.patch(orderId).set({
