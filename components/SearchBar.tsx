@@ -3,98 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Loader2, Star, Tag, Package } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRouter } from "next/router";
 import { client } from "@/sanity/lib/client";
 
-// Mock data for demonstration - replace with your actual Sanity client
-const mockProducts = [
-  {
-    _id: "1",
-    name: "Rudraksha Meditation Beads",
-    slug: { current: "rudraksha-meditation-beads" },
-    price: 89.99,
-    discount: 10,
-    description: "Sacred Rudraksha beads for meditation and spiritual practice",
-    images: [
-      {
-        asset: {
-          url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300",
-        },
-      },
-    ],
-    categories: [{ title: "Meditation" }],
-    bead: ["rudraksha"],
-    purpose: ["peace", "balance"],
-    status: ["New Arrival"],
-    stock: 15,
-    averageRating: 4.5,
-  },
-  {
-    _id: "2",
-    name: "Karungali Protection Bracelet",
-    slug: { current: "karungali-protection-bracelet" },
-    price: 129.99,
-    discount: 0,
-    description: "Powerful Karungali beads for protection and positive energy",
-    images: [
-      {
-        asset: {
-          url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300",
-        },
-      },
-    ],
-    categories: [{ title: "Bracelets" }],
-    bead: ["karungali"],
-    purpose: ["protection", "courage"],
-    status: ["Hot", "Best Seller"],
-    stock: 8,
-    averageRating: 4.8,
-  },
-  {
-    _id: "3",
-    name: "Rose Quartz Love Necklace",
-    slug: { current: "rose-quartz-love-necklace" },
-    price: 199.99,
-    discount: 15,
-    description:
-      "Beautiful Rose Quartz necklace for attracting love and harmony",
-    images: [
-      {
-        asset: {
-          url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300",
-        },
-      },
-    ],
-    categories: [{ title: "Necklaces" }],
-    bead: ["rose-quartz"],
-    purpose: ["love", "balance"],
-    status: ["New Arrival"],
-    stock: 12,
-    averageRating: 4.3,
-  },
-  {
-    _id: "4",
-    name: "Pyrite Wealth Mala",
-    slug: { current: "pyrite-wealth-mala" },
-    price: 299.99,
-    discount: 20,
-    description:
-      "Golden Pyrite mala beads for attracting wealth and prosperity",
-    images: [
-      {
-        asset: {
-          url: "https://images.unsplash.com/photo-1506629905496-00be5b89ff18?w=300",
-        },
-      },
-    ],
-    categories: [{ title: "Mala" }],
-    bead: ["pyrite"],
-    purpose: ["wealth", "courage"],
-    status: ["Best Seller"],
-    stock: 5,
-    averageRating: 4.7,
-  },
-];
 
 // Debounce hook for performance
 const useDebounce = (value: any, delay: any) => {
@@ -124,12 +34,13 @@ const SearchDialog = ({ isOpen, onClose, onProductSelect }: any) => {
   const debouncedQuery = useDebounce(query, 300);
 
   // Mock search function - replace with your Sanity GROQ query
-  const searchProducts = async (searchQuery: any = query) => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
-    }
-    const groqQuery = `*[_type == "product" && (
+  const searchProducts = useCallback(async (searchQuery: string = query) => {
+  if (!searchQuery.trim()) {
+    setResults([]);
+    return;
+  }
+  setIsLoading(true);
+  const groqQuery = `*[_type == "product" && (
     name match $searchQuery + "*" ||
     description match $searchQuery + "*" ||
     categories[]->title match $searchQuery + "*" ||
@@ -151,11 +62,12 @@ const SearchDialog = ({ isOpen, onClose, onProductSelect }: any) => {
     averageRating
   }[0...10]`;
 
-    const filtered = await client.fetch(groqQuery, { searchQuery });
-    setResults(filtered);
-    setIsLoading(false);
-    setSelectedIndex(-1);
-  };
+  const filtered = await client.fetch(groqQuery, { searchQuery });
+  setResults(filtered);
+  setIsLoading(false);
+  setSelectedIndex(-1);
+}, [query]);
+
 
   useEffect(() => {
     searchProducts(debouncedQuery);

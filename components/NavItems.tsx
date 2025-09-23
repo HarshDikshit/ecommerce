@@ -1,62 +1,20 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { ChevronDown, ShoppingBag, Search, Menu, X, User } from "lucide-react";
+import { ChevronDown, ShoppingBag, Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { client } from "@/sanity/lib/client";
-import Link from "next/link";
 import SearchDialogHandler from "./SearchBar";
 import FavoriteButton from "./FavoriteButton";
 import CartIcon from "./CartIcon";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
-
-// React Query implementation with Sanity client
-const useQuery = (key: any, queryFn: any, options: any = {}) => {
-  const [data, setData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const cachedData = localStorage.getItem(`query-${JSON.stringify(key)}`);
-
-    if (cachedData && options.staleTime) {
-      const parsed = JSON.parse(cachedData);
-      if (Date.now() - parsed.timestamp < options.staleTime) {
-        setData(parsed.data);
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const result = await queryFn();
-        setData(result);
-
-        // Cache the result
-        localStorage.setItem(
-          `query-${JSON.stringify(key)}`,
-          JSON.stringify({
-            data: result,
-            timestamp: Date.now(),
-          })
-        );
-      } catch (err: any) {
-        setError(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [JSON.stringify(key), options.staleTime]);
-
-  return { data, isLoading, error };
-};
+import Link from "next/link";
 
 const ProductCard = ({ product }: any) => (
-  <div  className="group p-4 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer">
-    <a href={`/product/${product?.slug?.current}`} className="flex items-start space-x-4">
+  <div className="group p-4 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer">
+    <Link
+      href={`/product/${product?.slug?.current}`}
+      className="flex items-start space-x-4"
+    >
       <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
         {product.images?.[0] && (
           <img
@@ -79,11 +37,17 @@ const ProductCard = ({ product }: any) => (
           </span>
         )}
       </div>
-    </a>
+    </Link>
   </div>
 );
 
-const DesktopDropdown = ({ title, products, isLoading, isVisible, setIsVisible }: any) => (
+const DesktopDropdown = ({
+  title,
+  products,
+  isLoading,
+  isVisible,
+  setIsVisible,
+}: any) => (
   <div
     onMouseLeave={() => setIsVisible(false)}
     className={`absolute top-full left-0 w-screen bg-white shadow-xl border-t z-40 transition-all duration-300 ease-in-out ${
@@ -122,7 +86,12 @@ const DesktopDropdown = ({ title, products, isLoading, isVisible, setIsVisible }
   </div>
 );
 
-const MobileDropdown = ({ products, isLoading, isOpen }: any) => (
+const MobileDropdown = ({
+  products,
+  isLoading,
+  isOpen,
+  onProductClick,
+}: any) => (
   <div
     className={`overflow-hidden transition-all duration-300 ease-in-out ${
       isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
@@ -143,9 +112,11 @@ const MobileDropdown = ({ products, isLoading, isOpen }: any) => (
         </div>
       : <div className="space-y-4 max-h-64 overflow-y-auto">
           {products?.slice(0, 4).map((product: any) => (
-            <div
+            <Link
               key={product._id}
-              className="flex items-start space-x-3 hover:bg-white p-2 rounded-lg transition-colors cursor-pointer"
+              href={`/product/${product?.slug?.current}`}
+              className="flex items-start space-x-3 hover:bg-white p-2 rounded-lg transition-colors cursor-pointer "
+              onClick={onProductClick}
             >
               <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                 {product.images?.[0] && (
@@ -164,7 +135,7 @@ const MobileDropdown = ({ products, isLoading, isOpen }: any) => (
                   ₹{product.price?.toLocaleString()}
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       }
@@ -174,12 +145,15 @@ const MobileDropdown = ({ products, isLoading, isOpen }: any) => (
 
 const DesktopNavItem = ({ title, query }: any) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [products, setproducts] = useState(null);
 
-  const { data: products, isLoading } = useQuery(
-    [title.toLowerCase(), query],
-    () => client.fetch(query),
-    { staleTime: 5 * 60 * 1000 }
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await client.fetch(query);
+      setproducts(data);
+    };
+    fetchData();
+  }, []);
 
   return (
     <div
@@ -202,7 +176,7 @@ const DesktopNavItem = ({ title, query }: any) => {
       <DesktopDropdown
         title={title}
         products={products}
-        isLoading={isLoading}
+        isLoading={products === null ? true : false}
         isVisible={isHovered}
         setIsVisible={setIsHovered}
       />
@@ -210,14 +184,17 @@ const DesktopNavItem = ({ title, query }: any) => {
   );
 };
 
-const MobileNavItem = ({ title, query }: any) => {
+const MobileNavItem = ({ title, query, onProductClick }: any) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [products, setproducts] = useState(null);
 
-  const { data: products, isLoading } = useQuery(
-    [title.toLowerCase(), query],
-    () => client.fetch(query),
-    { staleTime: 5 * 60 * 1000 }
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await client.fetch(query);
+      setproducts(data);
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="border-b border-gray-100 last:border-b-0">
@@ -235,8 +212,9 @@ const MobileNavItem = ({ title, query }: any) => {
       <MobileDropdown
         title={title}
         products={products}
-        isLoading={isLoading}
+        isLoading={products === null ? true : false}
         isOpen={isOpen}
+        onProductClick={onProductClick}
       />
     </div>
   );
@@ -298,6 +276,10 @@ const NavbarItems = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileMenuOpen]);
 
+  const handleMobileProductClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="relative">
       <nav className="bg-white shadow-sm sticky top-0 z-[9999] border-b">
@@ -305,9 +287,12 @@ const NavbarItems = () => {
           <div className=" flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <a
+                href="/"
+                className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+              >
                 Divine Gems
-              </div>
+              </a>
             </div>
 
             {/* Desktop Navigation - Center */}
@@ -325,39 +310,38 @@ const NavbarItems = () => {
 
             {/* Right side items */}
             <div className="flex items-center space-x-4">
-                <button aria-label="Search">
-                </button>
-                
-                  <SearchDialogHandler />
-                <FavoriteButton showProduct={false} />
-                <CartIcon />
-                {isSignedIn ?
-                  <UserButton />
-                : <SignInButton mode="modal">
-                    <button className="clerk-button lg:inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105">Sign In</button>
-                  </SignInButton>
-                }
-              </div>
-
-              <Link
-                href="/shop"
-                className="hidden lg:inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 ml-2"
-              >
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Shop Now
-              </Link>
-
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {isMobileMenuOpen ?
-                  <X className="w-6 h-6" />
-                : <Menu className="w-6 h-6" />}
-              </button>
+              <SearchDialogHandler />
+              <FavoriteButton showProduct={false} />
+              <CartIcon />
+              {isSignedIn ?
+                <UserButton />
+              : <SignInButton mode="modal">
+                  <button className="clerk-button lg:inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105">
+                    Sign In
+                  </button>
+                </SignInButton>
+              }
             </div>
+
+            <Link
+              href="/shop"
+              className="hidden lg:inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 ml-2"
+            >
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              Shop Now
+            </Link>
+
+            {/* Mobile menu button */}
+            <Button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {isMobileMenuOpen ?
+                <X className="w-6 h-6" />
+              : <Menu className="w-6 h-6" />}
+            </Button>
           </div>
+        </div>
       </nav>
 
       {/* Mobile Navigation Overlay */}
@@ -375,6 +359,7 @@ const NavbarItems = () => {
                     key={item.title}
                     title={item.title}
                     query={item.query}
+                    onProductClick={handleMobileProductClick}
                   />
                 ))}
               </div>

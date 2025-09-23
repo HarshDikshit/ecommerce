@@ -1,8 +1,6 @@
-
 import Hero from '@/components/Hero';
 import FlowingLabels from '@/components/FlowingLabels';
 import Container from '@/components/Container';
-import Footer from '@/components/Footer';
 import CategorySlider from '@/components/CategorySlider';
 import Products from '@/components/Products';
 import { getAllSlides, getGalleryProducts, getProducts } from '@/sanity/queries';

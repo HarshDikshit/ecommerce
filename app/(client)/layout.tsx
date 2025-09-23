@@ -1,12 +1,8 @@
-"use client";
-
 import Footer from "@/components/Footer";
 import "../globals.css";
-import Navbar from "@/components/Navbar";
 import { ClerkProvider } from "@clerk/nextjs";
-import { useEffect } from "react";
-import Script from "next/script";
 import NavbarItems from "@/components/NavItems";
+// import Navbar from "@/components/Navbar";
 
 
 
@@ -15,10 +11,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  useEffect(() => {
-      fetch('/api/init', { method: 'POST' }).then((res) => res.json())
-        .then((data) => console.log(data));
-    }, []);
+  // useEffect(() => {
+  //     fetch('/api/init', { method: 'POST' }).then((res) => res.json())
+  //       .then((data) => console.log(data));
+  //   }, []);
   
   return (
     <ClerkProvider>
